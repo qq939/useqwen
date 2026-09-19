@@ -1,5 +1,5 @@
 # ===== 全局参数：集中放文件最上边，方便修改 =====
-BASE_URL = "http://localhost:1234/v1"            # 第14行使用：ChatOpenAI 的 base_url（本地 OpenAI 兼容地址）
+BASE_URL = "http://dimond.top:21234/v1"            # 第14行使用：ChatOpenAI 的 base_url（本地 OpenAI 兼容地址）
 API_KEY = "lm-studio"                            # 第14行使用：本地服务不校验 key，随便填
 MODEL = "qwen/qwen3.8-27b"                       # 第14行使用：ChatOpenAI 的 model，和你 curl 里的一致
 SYSTEM_PROMPT = "You answer only in rhymes."     # 第15行使用：作为 system 消息

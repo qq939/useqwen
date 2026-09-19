@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI          # 第13行使用：LangChain �
 
 
 def main():
-    llm = ChatOpenAI(base_url=BASE_URL, api_key=API_KEY, model=MODEL)
+    llm = ChatOpenAI(base_url=BASE_URL, api_key=API_KEY, model=MODEL, timeout=30)  # timeout=30：本地服务没启动时 30 秒就报错，不会一直卡住
     messages = [("system", SYSTEM_PROMPT), ("human", USER_INPUT)]
     print(llm.invoke(messages).content)
 

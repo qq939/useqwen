@@ -1,5 +1,5 @@
 """TDD 测试：不依赖真实 localhost:1234，用本地 mock 服务验证 LangChain 调用链路。
-运行： .venv/bin/python test_qwen_chat.py
+运行： micromamba run -p /Users/jimjiang/Downloads/py311-askqwen python test_qwen_chat.py
 """
 import contextlib
 import io
@@ -50,22 +50,35 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def test_langchain_calls_qwen():
-    threading.Thread(target=_watchdog, daemon=True).start()
-
+def _start_server():
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)  # 随机端口模拟 localhost:1234
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, port
 
+
+def _run_main(port, argv):
+    """把被测代码指向 mock 服务并模拟命令行参数，返回打印出来的内容。"""
+    import qwen_chat
+
+    qwen_chat.BASE_URL = f"http://127.0.0.1:{port}/v1"
+    old_argv = sys.argv
+    sys.argv = argv
+    buf = io.StringIO()
     try:
-        import qwen_chat
-
-        qwen_chat.BASE_URL = f"http://127.0.0.1:{port}/v1"  # 把被测代码指向 mock 服务
-
-        buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             qwen_chat.main()
-        out = buf.getvalue()
+    finally:
+        sys.argv = old_argv
+    return buf.getvalue()
+
+
+def test_langchain_calls_qwen():
+    """不传问题时：用默认 USER_INPUT，且请求链路正确。"""
+    threading.Thread(target=_watchdog, daemon=True).start()
+    server, port = _start_server()
+    try:
+        out = _run_main(port, ["qwen_chat.py"])
 
         assert FAKE_REPLY in out, f"输出里没有模型回复: {out!r}"
         assert captured["path"] == "/v1/chat/completions", captured["path"]
@@ -75,10 +88,26 @@ def test_langchain_calls_qwen():
         assert body["messages"][1] == {"role": "user", "content": qwen_chat.USER_INPUT}
     finally:
         server.shutdown()
+    print("[PASS] 默认问题链路正确")
 
-    print("[PASS] LangChain 调用 qwen 链路正确")
+
+def test_cli_question_is_used():
+    """命令行后面跟问题：该问题要作为 human 消息发出去（多词无需引号）。"""
+    threading.Thread(target=_watchdog, daemon=True).start()
+    server, port = _start_server()
+    try:
+        out = _run_main(port, ["qwen_chat.py", "What", "is", "2+2?"])
+
+        assert FAKE_REPLY in out, f"输出里没有模型回复: {out!r}"
+        assert captured["body"]["messages"][1] == {"role": "user", "content": "What is 2+2?"}, captured["body"]
+    finally:
+        server.shutdown()
+    print("[PASS] 命令行问题被正确使用")
 
 
 if __name__ == "__main__":
+    import qwen_chat  # noqa: F401  供上面断言引用模块属性
+
     test_langchain_calls_qwen()
+    test_cli_question_is_used()
     sys.exit(0)

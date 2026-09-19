@@ -1,0 +1,22 @@
+# 参考地址 / 接口文档
+
+## LangChain 调用 OpenAI 兼容接口
+- LangChain ChatOpenAI 官方文档: https://python.langchain.com/docs/integrations/chat/openai/
+- langchain-openai PyPI: https://pypi.org/project/langchain-openai/
+
+## 本地 OpenAI 兼容服务（端口 1234）
+- LM Studio 本地服务器（默认 http://localhost:1234/v1）: https://lmstudio.ai/docs/app/api
+- LM Studio OpenAI 兼容 API 说明: https://lmstudio.ai/docs/app/api/endpoints/openai
+
+## 用户提供的原始 curl
+```
+curl http://localhost:1234/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3.8-27b",
+    "system_prompt": "You answer only in rhymes.",
+    "input": "What is your favorite color?"
+}'
+```
+说明：该 curl 是本地服务的原生 REST 接口；LangChain 使用 `ChatOpenAI` 走 OpenAI 兼容协议，
+对应地址为 `http://localhost:1234/v1/chat/completions`。
